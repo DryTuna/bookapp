@@ -3,7 +3,7 @@
 import re
 from bookdb import BookDB
 
-DB = BookDB
+DB = BookDB()
 
 def resolve_path(path):
     urls = [(r'^$', books),
@@ -34,34 +34,35 @@ def book(book_id):
 
 def books():
     all_books = DB.titles()
-    body = ['<h1>My Bookshelf</h1>', '<ul>']
+    body = '<h1>My Bookshelf</h1><ul>'
     item_template = '<li><a href="/book/{id}">{title}</a></li>'
     for book in all_books:
-        body.append(item_template.format(**book))
-    body.append('</ul>')
-    return '\n'.join(body)
+
+        body+=(item_template.format(**book))
+    body+='</ul>'
+    return body
 
 def application(environ, start_response):
     headers = [("Content-type", "text/html")]
     try:
         path = environ.get('PATH_INFO', None)
-        print str(path)
         if path is None:
             raise NameError
         func, args = resolve_path(path)
         body = func(*args)
-        print str(body)
         status = "200 OK"
     except NameError:
         status = "404 Not Found"
         body = "<h1>Not Found</h1>"
-    except NameError:
+    except Exception:
         status = "500 Internal Server Error"
         body = "<h1>Internal Server Error</h1>"
     finally:
         headers.append(('Content-length', str(len(body))))
         start_response(status, headers)
         return [body]
+
+
 
 if __name__ == '__main__':
     from wsgiref.simple_server import make_server
